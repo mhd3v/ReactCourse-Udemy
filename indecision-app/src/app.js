@@ -1,24 +1,55 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
+// All react components can be:
+// 1. Classes that extend React.Component and implement the render() function
+// 2. Functions which just return the JSX to be rendered
+
 class IndecisionApp extends React.Component {
 
     constructor(props) {
         super(props);
         this.handleDeleteOptions = this.handleDeleteOptions.bind(this);
+        this.handleDeleteOption = this.handleDeleteOption.bind(this);
         this.handlePick = this.handlePick.bind(this);
         this.handleAddOption = this.handleAddOption.bind(this);
         this.state = {
-            options: []
+            options: props.options
         }
     }
 
+    // lifecycle methods only available in class based components
+    componentDidMount() {
+        const json = localStorage.getItem('options');
+        const options = JSON.parse(json);
+
+        if (options){
+            this.setState(() => ({options}));
+        }
+    }
+
+    // only fired when state after state/prop values change
+    componentDidUpdate(prevProps, prevState) {
+        if (prevState.options.length !== this.state.options.length){
+            const json = JSON.stringify(this.state.options);
+            localStorage.setItem('options', json);
+        }
+    }
+
+    componentWillUnmount() {
+        console.log('Component will unmount');
+    }
+
     handleDeleteOptions() {
-        this.setState(() => {
-            return {
-                options: []
-            };
-        });
+        // one liner es6 syntaxt to return an object
+        // just wrap the object inside ()
+        this.setState(() => ({ options: [] }));
+    }
+
+    handleDeleteOption(optionToRemove) {
+        this.setState((prevState) => ({ 
+            options: prevState.options.filter((option) => option !== optionToRemove)
+        }));
     }
 
     handlePick() {
@@ -29,35 +60,31 @@ class IndecisionApp extends React.Component {
 
     handleAddOption(option) {
 
-        if (!option){
+        if (!option) {
             return 'Enter valid value to add item';
         } else if (this.state.options.indexOf(option) > -1) {
             return 'This option already exists';
-        } 
-        
-        this.setState((prevState) => {
-            return {
-                // dont want to push to the prevState options array
-                options: this.state.options.concat(option)
-            };
-        });
+        }
+
+        // dont want to push to the prevState options array
+        this.setState((prevState) => ({ options: this.state.options.concat(option) }));
     }
 
     render() {
-        const title = 'Indecision';
         const subtitle = 'Put your life in the hands of a computer';
         return (
             <div>
                 {/* passing data into into component */}
-                <Header title={title} subtitle={subtitle} />
-                <Action 
-                    hasOptions={this.state.options.length > 0} 
+                <Header subtitle={subtitle} />
+                <Action
+                    hasOptions={this.state.options.length > 0}
                     handlePick={this.handlePick}
                 />
-                <Options 
+                <Options
                     options={this.state.options}
                     // pass a method to the child to reference for deletion as a property
                     handleDeleteOptions={this.handleDeleteOptions}
+                    handleDeleteOption={this.handleDeleteOption}
                 />
                 <AddOption handleAddOption={this.handleAddOption} />
             </div>
@@ -65,53 +92,80 @@ class IndecisionApp extends React.Component {
     }
 }
 
-class Header extends React.Component {
-    render() {
-        // props holds all the attributes passed down to the child by the parent component
-        return (
-            <div>
-                <h1>{this.props['title']}</h1>
-                <h2>{this.props['subtitle']}</h2>
-            </div>
-        );
-    }
+IndecisionApp.defaultProps = {
+    options: []
 }
 
-class Action extends React.Component {
-    render() {
-        return (
-            <div>
-                <button 
-                    onClick={this.props.handlePick}
-                    disabled={!this.props.hasOptions}
-                >
+// stateless functional component (Use for a component that doesn't manage the state)
+// we dont have access to 'this' inside the arrow function so props is passed as an argument
+const Header = (props) => {
+
+    // props holds all the attributes passed down to the child by the parent component
+    return (
+        <div>
+            <h1>{props['title']}</h1>
+            {props.subtitle && <h2>{props.subtitle}</h2>}
+        </div>
+    );
+
+};
+
+Header.defaultProps = {
+    title: 'Indecision'
+}
+
+
+const Action = (props) => {
+
+    return (
+        <div>
+            <button
+                onClick={props.handlePick}
+                disabled={!props.hasOptions}
+            >
                 What should I do?
-                </button>
-            </div>
-        );
-    }
-}
+            </button>
+        </div>
+    );
+};
 
-class Options extends React.Component {
-    render() {
-        return (
-            <div>
-                <button onClick={this.props.handleDeleteOptions}>Remove All</button>
-                {this.props['options'].map((option) => <Option key={option} optionText={option} />)}
-            </div>
-        );
-    }
-}
+const Options = (props) => {
 
-class Option extends React.Component {
-    render() {
-        return (
-            <div>
-                {this.props['optionText']}
-            </div>
-        );
-    }
-}
+    return (
+        <div>
+            <button onClick={props.handleDeleteOptions}>Remove All</button>
+            {props.options.length === 0 && <p>Please add an option to get started!</p>}
+            {
+                props['options'].map((option) => (
+                    <Option
+                        key={option}
+                        optionText={option}
+                        handleDeleteOption={props.handleDeleteOption}
+
+                    />
+                ))
+            }
+        </div>
+    );
+
+};
+
+const Option = (props) => {
+
+    return (
+        <div>
+            {props['optionText']}
+            <button 
+                onClick={(e) => {
+                    props.handleDeleteOption(props.optionText);
+                }}
+            >
+                Remove
+            </button>
+        </div>
+    );
+
+};
 
 class AddOption extends React.Component {
 
@@ -129,9 +183,11 @@ class AddOption extends React.Component {
         // error is returned as a string by the parent otherwise nothing is returned
         const error = this.props.handleAddOption(option);
 
-        this.setState(() => {
-            return { error };
-        });
+        this.setState(() => ({ error }));
+        
+        if (!error) {
+            e.target.elements['option'].value = '';
+        }
     }
 
     render() {
@@ -146,5 +202,15 @@ class AddOption extends React.Component {
         );
     }
 }
+
+// stateless functional component
+const User = (props) => {
+    return (
+        <div>
+            <p>Name: {props['name']}</p>
+            <p>Age: {props['age']}</p>
+        </div>
+    );
+};
 
 ReactDOM.render(<IndecisionApp />, document.getElementById('app'));
