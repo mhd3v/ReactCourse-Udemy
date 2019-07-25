@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "live-server public/", 
-    "build": "babel src/app.js --out-file=public/scripts/app.js --presets=env,react --watch",
+    "start": "live-server public/",
+    "build": "webpack --watch",
+    "build-babel": "babel src/app.js --out-file=public/scripts/app.js --presets=env,react --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -14,10 +15,13 @@
     "babel-cli": "^6.24.1",
     "babel-preset-env": "^1.5.2",
     "babel-preset-react": "^6.24.1",
-    "live-server": "^1.2.1"
+    "live-server": "^1.2.1",
+    "validator": "^11.1.0",
+    "webpack": "^4.37.0"
   },
   "devDependencies": {
     "eslint": "^6.0.1",
-    "eslint-plugin-react": "^7.14.2"
+    "eslint-plugin-react": "^7.14.2",
+    "webpack-cli": "^3.3.6"
   }
 }
